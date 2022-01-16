@@ -1,0 +1,10 @@
+database:
+  hosts: 
+    - localhost:9042
+  username: cassandra
+  password: cassandra
+  key_space: ks_data_collection
+  table_space: ts_timeseries
+
+server:
+  host_port: localhost:5005

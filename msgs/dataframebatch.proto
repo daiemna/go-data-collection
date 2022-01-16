@@ -1,0 +1,50 @@
+syntax = "proto3";
+// package com.data.batch;
+option go_package = "internal/services";
+
+message Datapoint {
+  string datapointid = 1;
+  float value = 2;
+}
+
+message DataRecord {
+  int64 timestamp = 1;
+  repeated Datapoint values = 2;
+}
+
+message SeriesPoint {
+  int64 timestamp = 1;
+  float value = 2;
+}
+
+message DataSeries {
+  string datapointid = 1;
+  repeated SeriesPoint values = 2;
+}
+
+message Dataframe {
+  string sourceid = 1;
+  string dataframeid = 2;
+  repeated DataRecord records = 3;
+  repeated DataSeries nseries = 4;
+}
+
+message Batches {
+  string batchesid = 1;
+  repeated Dataframe content = 2;
+}
+
+message Response {
+  string msg=1;
+}
+
+message DataframeResponse {
+  string dataframeid = 1;
+  Response response= 2;
+}
+
+service TimeSeriesData{
+  rpc StreamRecords (stream DataRecord) returns (stream Response);
+  rpc StreamDataSeries (stream DataSeries) returns (stream Response);
+  rpc StreamDataframes(stream Dataframe) returns (stream DataframeResponse);
+}

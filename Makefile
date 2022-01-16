@@ -15,7 +15,7 @@ test:	 ## Run all the tests, assumes that docker-containers are up and working
 	go build . && chmod +x ./scripts/test.sh && ./scripts/test.sh
 	
 
-.PHONY : recreate_test_env
+.PHONY : test_env
 recreate_test_env:  ## Create the docker-container to run integration-tests against
 	docker-compose -f devsetup/docker-compose.yml down
 	docker-compose -f devsetup/docker-compose.yml up -d --build

@@ -5,7 +5,7 @@ This service is intented to collect data using grpc using Go lang backend and ca
 ## Dev Setup
 
 ```bash
-make recreate_test_env
+make test_env
 make test
 ```
 

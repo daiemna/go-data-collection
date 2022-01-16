@@ -1,0 +1,13 @@
+version: "3"
+services:
+  grpc-cassandra-s:
+    container_name: grpc-cassandra-c
+    image: scylladb/scylla:4.5.3
+    command:
+      - --authenticator=PasswordAuthenticator
+      - --authorizer=CassandraAuthorizer
+      - --smp=2
+    volumes:
+      - ./init.cql:/etc/init.cql:z
+    ports:
+      - "9042:9042"

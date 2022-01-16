@@ -1,0 +1,7 @@
+*.log
+*.sum
+build/
+.vscode/
+vendor/
+.cover/
+go-data-collection

@@ -40,6 +40,7 @@ type CassandraConfig struct {
 	DisableInitialHostLookup bool
 }
 
+// String returns string representation of CassandraConfig
 func (conf *CassandraConfig) String() string {
 	return fmt.Sprintf(`
 IP       : %v
@@ -113,25 +114,21 @@ func CreateKeyspace(cassConf *CassandraConfig) error {
 	clusterConf := NewCassandraClusterConfig(&ksLessConf)
 	dbSession, err := NewCassandraSession(clusterConf)
 	if err != nil {
-		return fmt.Errorf("Error creating keyspace less session: %v", err)
+		return fmt.Errorf("error creating keyspace less session: %v", err)
 	}
 	defer dbSession.Close()
 	createKsStmt := fmt.Sprintf(`CREATE KEYSPACE IF NOT EXISTS %s WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };`, cassConf.Keyspace)
-	var createTableStmt string
-	createTableStmt = fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s.%s (
+	createTableStmt := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s.%s (
 		tsid uuid,
 		time timestamp,
 		value float,
 		PRIMARY KEY (tsid, time)
 	) WITH CLUSTERING ORDER BY (time ASC);`, cassConf.Keyspace, cassConf.Table)
-	// default:
-	// 	return fmt.Errorf("Unknow Table type: %v", cassConf.TableType)
-	// }
 	if err = dbSession.Query(createKsStmt).Exec(); err != nil {
-		return fmt.Errorf("Error creating Keyspace: %v", err)
+		return fmt.Errorf("error creating Keyspace: %v", err)
 	}
 	if err = dbSession.Query(createTableStmt).Exec(); err != nil {
-		return fmt.Errorf("Error creating Table: %v", err)
+		return fmt.Errorf("error creating Table: %v", err)
 	}
 	return nil
 }

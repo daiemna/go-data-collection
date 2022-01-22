@@ -26,7 +26,7 @@ import (
 const DefaultCassandraPort = "9042"
 
 var (
-	berlinLoc *time.Location
+	LocalLoc *time.Location
 
 	// UTC represents a timezone for UTC
 	UTC *time.Location
@@ -35,7 +35,7 @@ var (
 // Initialize two different timezones to automatically parse timestamps
 func init() {
 	// berlinLoc represents a timezone for Berlin
-	berlinLoc, _ = time.LoadLocation("Europe/Berlin")
+	LocalLoc, _ = time.LoadLocation("Local")
 
 	// UTC represents a timezone for UTC
 	UTC, _ = time.LoadLocation("UTC")
@@ -55,13 +55,13 @@ func toFloat(input string) (float64, error) {
 	return strconv.ParseFloat(strings.TrimSpace(input), 32)
 }
 
-// Convert a given timestamp string to its UTC milli representation
+// Convert a given timestamp string to its UTC milliseconds representation
 func convertToUTCMilli(ts string) (int64, error) {
 	parsed, err := dateparse.ParseIn(ts, UTC)
 	if err != nil {
 		return 0, err
 	}
-	return parsed.UTC().UnixNano() / 1000000, nil
+	return parsed.UTC().UnixNano() / int64(time.Millisecond), nil
 }
 
 func toUUID4(uuid30 string) (string, error) {
@@ -71,7 +71,7 @@ func toUUID4(uuid30 string) (string, error) {
 	}
 	newuuid = uuid30[0:8] + "-" + uuid30[8:12] + "-4" + uuid30[12:15] + "-a" + uuid30[15:18] + "-" + uuid30[18:30]
 	if _, err := gocql.ParseUUID(newuuid); err != nil {
-		return "", fmt.Errorf("Failed to parse the UUID, check provided uuid all charecters must form a valid uuid")
+		return "", fmt.Errorf("failed to parse the UUID, check provided uuid all charecters must form a valid uuid")
 	}
 	return newuuid, nil
 }
@@ -103,14 +103,15 @@ func Line2Query(
 	line := strings.Split(scanedText, ";")
 	lineLen := len(line)
 	if len(line) != 3 {
-		return fmt.Errorf("Unreadable row, must have 3 tokens but %v was given", lineLen)
+		return fmt.Errorf("unreadable row, must have 3 tokens but %v was given", lineLen)
 	}
 	var query string
-	var row csvRowWithUUID
-	err := row.fromLine(line)
+	// var row csvRowWithUUID
+	lineParser, err := ParseCsvLine(line)
 	if err != nil {
 		return err
 	}
+	row := lineParser.getRow()
 	query = fmt.Sprintf("INSERT INTO %s (tsid, time, value ) VALUES (?, ?, ?)", table)
 	batch.Query(query, row.datapoint, row.timestamp, float32(row.value))
 	log.Debug().Msgf("Write query: %s", query)
@@ -134,7 +135,7 @@ func ValidateHost(hostPort string) (string, error) {
 		log.Debug().Msgf("index of missing port in err : %d", strings.Index(err.Error(), "missing port"))
 	}
 	log.Debug().Msgf("Host: %s, Port: %s", host, port)
-	if err != nil && strings.Index(err.Error(), "missing port") > -1 {
+	if err != nil && strings.Contains(err.Error(), "missing port") {
 		ip := net.ParseIP(hostPort)
 		if ip == nil && hostPort != "localhost" {
 			return "", fmt.Errorf("`%s` is not valid hostname, host name can be an IP address or `localhost`", hostPort)
@@ -144,15 +145,4 @@ func ValidateHost(hostPort string) (string, error) {
 		return "", err
 	}
 	return host + ":" + port, nil
-}
-
-type safeIterator struct {
-	iter *gocql.Iter
-	mux  sync.Mutex
-}
-
-func (siter *safeIterator) Scan(values []interface{}) bool {
-	siter.mux.Lock()
-	defer siter.mux.Unlock()
-	return siter.iter.Scan(values...)
 }

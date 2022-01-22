@@ -10,7 +10,9 @@ package bigdb
 import (
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/gocql/gocql"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -64,4 +66,18 @@ func Test_toUUID4(t *testing.T) {
 	uuid30 = "fc000c1155541809d6e4ce79534"
 	_, err = toUUID4(uuid30)
 	assertions.NotNil(err, "in valid char count in uuid30, but conversion did not throw an error")
+}
+
+func Test_Line2Query(t *testing.T) {
+	assertions := assert.New(t)
+	timestamp := time.Now().UnixMilli()
+	value := float64(10.0)
+	id := "8"
+	line := fmt.Sprintf("%d;%s;%f", timestamp, id, value)
+	batch := gocql.NewBatch(gocql.LoggedBatch)
+	err := Line2Query(line, "ts_raw", batch)
+	if err != nil {
+		assertions.Nil(err, "There is err in Line2Query: %v", err)
+	}
+	assertions.Len(batch.Entries, 1, "Line2Query did not add an entry to the queries batch.")
 }
